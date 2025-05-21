@@ -1,0 +1,91 @@
+package Hotel.dao;
+
+import Hotel.entity.KhachHang;
+import Hotel.utils.JdbcHelPer;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class KhachHangDAOTest {
+
+    private KhachHangDAO dao;
+
+    @Before
+    public void setUp() {
+        dao = new KhachHangDAO();
+        // Thêm 1 khách hàng test trước
+        JdbcHelPer.executeUpdate("INSERT INTO KhachHang (MaKH, TenKH, SoDT, CCCD, GioiTinh, DiaChi) VALUES (?, ?, ?, ?, ?, ?)",
+                "KHTEST", "Nguyen Van A", "0123456789", "123456789", true, "Hanoi");
+    }
+
+    @After
+    public void tearDown() {
+        // Xoá khách hàng test tránh trùng dữ liệu
+        JdbcHelPer.executeUpdate("DELETE FROM KhachHang WHERE MaKH = ?", "KHTEST");
+    }
+
+    @Test
+    public void testInsert() {
+        KhachHang kh = new KhachHang();
+        kh.setMaKH("KHNEW");
+        kh.setTenKH("Tran Thi B");
+        kh.setSoDT("0987654321");
+        kh.setCCCD("987654321");
+        kh.setGioiTinh(false);
+        kh.setDiaChi("Ho Chi Minh");
+
+        dao.insert(kh);
+
+        KhachHang result = dao.findById("KHNEW");
+        assertNotNull(result);
+        assertEquals("Tran Thi B", result.getTenKH());
+        assertEquals("0987654321", result.getSoDT());
+
+        // Clean up
+        JdbcHelPer.executeUpdate("DELETE FROM KhachHang WHERE MaKH = ?", "KHNEW");
+    }
+
+    @Test
+    public void testSelectByKeyword_Found() {
+        List<KhachHang> list = dao.selectByKeyword("Nguyen");
+        assertTrue(list.size() > 0);
+        boolean found = false;
+        for (KhachHang kh : list) {
+            if ("KHTEST".equals(kh.getMaKH())) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
+    }
+
+    @Test
+    public void testSelectByKeyword_NotFound() {
+        List<KhachHang> list = dao.selectByKeyword("NoSuchKeyword");
+        assertTrue(list.isEmpty());
+    }
+
+    @Test
+    public void testSelect() {
+        List<KhachHang> list = dao.select();
+        assertNotNull(list);
+        assertTrue(list.size() > 0);
+    }
+
+    @Test
+    public void testFindById_Found() {
+        KhachHang kh = dao.findById("KHTEST");
+        assertNotNull(kh);
+        assertEquals("Nguyen Van A", kh.getTenKH());
+    }
+
+    @Test
+    public void testFindById_NotFound() {
+        KhachHang kh = dao.findById("KHNOTEXIST");
+        assertNull(kh);
+    }
+}
